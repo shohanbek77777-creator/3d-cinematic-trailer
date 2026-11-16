@@ -127,15 +127,20 @@ export class ActorRuntime {
       pivot.position.copy(parent.worldToLocal(cContainer.clone()));
       parent.add(pivot);
       pivot.updateMatrixWorld(true);
-      pivot.attach(obj);
+      for (const part of w.objects || [obj]) pivot.attach(part);
       const parentQ = parent.getWorldQuaternion(new THREE.Quaternion());
       const full = q.clone().multiply(parentQ).invert();
+      // The wheel spins about its own axle, which is not the car's lateral axis when the
+      // model was exported with the wheels turned. restYaw is that built-in steering
+      // angle; it is removed so the wheel points straight ahead before we steer it.
+      const axle = w.axis || AX_X;
       this.wheels.push({
         pivot,
         radius: w.radius * s,
         front: w.front,
-        spinAxis: AX_X.clone().applyQuaternion(full).normalize(),
+        spinAxis: axle.clone().applyQuaternion(full).normalize(),
         steerAxis: AX_Y.clone().applyQuaternion(full).normalize(),
+        restYaw: Math.atan2(-axle.z, axle.x),
         z: w.center.z,
       });
     }
@@ -212,16 +217,17 @@ export class ActorRuntime {
     const g = new THREE.Group();
     g.name = 'headlights';
     const { length: L, width: W, height: H } = this.dims;
+    const lamp = this._findHeadlamps() || { x: W * 0.32, y: H * 0.45, z: L * 0.48 };
     const lights = [];
     for (const sx of [-1, 1]) {
       const spot = new THREE.SpotLight(0xfff1dd, 0, L * 14, 0.42, 0.55, 1.6);
-      spot.position.set(sx * W * 0.32, H * 0.42, L * 0.48);
-      spot.target.position.set(sx * W * 0.2, 0, L * 3.5);
+      spot.position.set(sx * lamp.x, lamp.y, lamp.z);
+      spot.target.position.set(sx * lamp.x * 0.6, 0, L * 3.5);
       spot.castShadow = false;
       g.add(spot, spot.target);
       const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: getGlowTexture(), color: 0xfff6e8, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
-      sprite.position.set(sx * W * 0.33, H * 0.42, L * 0.5 + 0.02);
-      sprite.scale.setScalar(W * 0.5);
+      sprite.position.set(sx * lamp.x, lamp.y, lamp.z + 0.03);
+      sprite.scale.setScalar(W * 0.3);
       g.add(sprite);
       lights.push({ spot, sprite });
     }
@@ -230,11 +236,54 @@ export class ActorRuntime {
     this.setHeadlights(false);
   }
 
+  /**
+   * Locate the headlamps on the model: rays are cast at the nose from the front and the
+   * first surface they meet gives the lamp depth. Hits on parts named like lights are
+   * preferred, so the glow sits on the lens instead of floating in front of the bumper.
+   * Returns { x, y, z } in body space (x is the half-spacing), or null.
+   */
+  _findHeadlamps() {
+    if (this.kind !== 'vehicle' || !this.container) return null;
+    const { length: L, width: W, height: H } = this.dims;
+    this.root.updateMatrixWorld(true);
+    const ray = new THREE.Raycaster();
+    const dir = new THREE.Vector3(0, 0, -1).transformDirection(this.body.matrixWorld);
+    const o = new THREE.Vector3();
+    const hits = [];
+    const LAMP = /(light|lamp|lens|optic|far[ay]?\b|фар)/i;
+    for (let ix = 0; ix <= 8; ix++) {
+      for (let iy = 0; iy <= 10; iy++) {
+        const x = W * (0.2 + 0.03 * ix), y = H * (0.28 + 0.04 * iy);
+        o.set(x, y, L).applyMatrix4(this.body.matrixWorld);
+        ray.set(o, dir);
+        const hit = ray.intersectObject(this.container, true)[0];
+        if (!hit) continue;
+        const p = this.body.worldToLocal(hit.point.clone());
+        if (p.z < L * 0.25) continue; // went past the nose
+        const m = Array.isArray(hit.object.material) ? hit.object.material[hit.face?.materialIndex ?? 0] : hit.object.material;
+        hits.push({ p, lamp: LAMP.test(`${hit.object.name} ${m?.name || ''}`) });
+      }
+    }
+    if (!hits.length) return null;
+    let pick = hits.filter((h) => h.lamp);
+    if (pick.length >= 3) {
+      // several lamp groups (fog lights, indicators): keep the upper one
+      const top = Math.max(...pick.map((h) => h.p.y));
+      pick = pick.filter((h) => h.p.y > top - H * 0.16);
+    } else {
+      // no named lamps: use the body surface at the usual headlamp spot
+      pick = hits.filter((h) => Math.abs(h.p.x - W * 0.32) < W * 0.04 && Math.abs(h.p.y - H * 0.45) < H * 0.05);
+      if (!pick.length) return null;
+    }
+    const c = pick.reduce((a, h) => a.add(h.p), new THREE.Vector3()).divideScalar(pick.length);
+    return { x: Math.abs(c.x), y: c.y, z: Math.max(...pick.map((h) => h.p.z)) };
+  }
+
   setHeadlights(on, strength = 1) {
     if (!this.headlights) return;
     const L = this.dims.length;
     for (const { spot, sprite } of this.headlights.lights) {
-      spot.intensity = on ? 220 * strength * Math.max(1, L / 4.6) : 0;
+      spot.intensity = on ? 70 * strength * Math.max(1, L / 4.6) : 0;
       spot.visible = on;
       sprite.visible = on;
       sprite.material.opacity = 0.9 * strength;
@@ -306,8 +355,9 @@ export class ActorRuntime {
     for (const w of this.wheels) {
       const spin = setup.wheelSpin ? st.distance / Math.max(w.radius, 0.01) : 0;
       qs.setFromAxisAngle(w.spinAxis, spin);
-      if (w.front && steer !== 0) {
-        qt.setFromAxisAngle(w.steerAxis, steer);
+      const yaw = (w.front ? steer : 0) - w.restYaw;
+      if (yaw !== 0) {
+        qt.setFromAxisAngle(w.steerAxis, yaw);
         w.pivot.quaternion.copy(qt).multiply(qs);
       } else w.pivot.quaternion.copy(qs);
     }

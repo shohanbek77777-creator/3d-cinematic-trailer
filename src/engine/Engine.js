@@ -279,7 +279,7 @@ export class Engine {
       // city glow cards so car paint has something to reflect
       const cols = [0xffb070, 0x6ab0ff, 0xff4fa8, 0xffe0b0];
       for (let i = 0; i < 14; i++) {
-        const m = new THREE.Mesh(new THREE.PlaneGeometry(6, 1.6 + Math.random() * 3), new THREE.MeshBasicMaterial({ color: new THREE.Color(cols[i % 4]).multiplyScalar(2.5), side: THREE.DoubleSide }));
+        const m = new THREE.Mesh(new THREE.PlaneGeometry(12, 2.5 + Math.random() * 4), new THREE.MeshBasicMaterial({ color: new THREE.Color(cols[i % 4]).multiplyScalar(5), side: THREE.DoubleSide }));
         const a = (i / 14) * Math.PI * 2;
         m.position.set(Math.cos(a) * 40, 4 + Math.random() * 10, Math.sin(a) * 40);
         m.lookAt(0, 4, 0);
