@@ -347,6 +347,12 @@ export class Engine {
     const ctx = { actorState: (id, tt) => this.actorState(id, tt), heroId, groundHeight: (x, z) => this.groundHeight(x, z) };
     const cam = evaluateCameraTrack(project.camera.clips, t, ctx);
     applyShotToCamera(cam, this.shotCamera);
+    // portrait frames (Shorts / Reels): widen the lens so the subject is not cropped away
+    if (this.shotCamera.aspect < 1) {
+      const k = Math.min(2.1, 1 / this.shotCamera.aspect);
+      this.shotCamera.fov = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(this.shotCamera.fov) / 2) * k));
+      this.shotCamera.updateProjectionMatrix();
+    }
     return { cam, hero };
   }
 
