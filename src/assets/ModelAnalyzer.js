@@ -30,6 +30,41 @@ export function analyzeModel(root) {
   return { box, size, center, triangles: Math.round(triangles), meshes, materialCount: materials.length, textureCount: textures.size };
 }
 
+/**
+ * Outlier-robust bounds: percentile box over (sub-sampled) vertices, so stray helper
+ * meshes, baked ground-shadow planes or lone vertices don't inflate the model size.
+ * `transform` (Matrix4) is applied after each mesh's world matrix.
+ */
+export function robustBox(root, transform = null, lo = 0.002, hi = 0.998) {
+  root.updateMatrixWorld(true);
+  let total = 0;
+  root.traverse((o) => o.isMesh && o.geometry?.attributes.position && (total += o.geometry.attributes.position.count));
+  const stride = Math.max(1, Math.floor(total / 150000));
+  const xs = [], ys = [], zs = [];
+  const v = new THREE.Vector3();
+  const m = new THREE.Matrix4();
+  root.traverse((o) => {
+    if (!o.isMesh || !o.geometry?.attributes.position || o.visible === false) return;
+    m.copy(o.matrixWorld);
+    if (transform) m.premultiply(transform);
+    const pos = o.geometry.attributes.position;
+    for (let i = 0; i < pos.count; i += stride) {
+      v.fromBufferAttribute(pos, i).applyMatrix4(m);
+      xs.push(v.x);
+      ys.push(v.y);
+      zs.push(v.z);
+    }
+  });
+  if (!xs.length) return new THREE.Box3().setFromObject(root);
+  const range = (arr) => {
+    arr.sort((a, b) => a - b);
+    const n = arr.length - 1;
+    return [arr[Math.floor(n * lo)], arr[Math.ceil(n * hi)]];
+  };
+  const [x0, x1] = range(xs), [y0, y1] = range(ys), [z0, z1] = range(zs);
+  return new THREE.Box3(new THREE.Vector3(x0, y0, z0), new THREE.Vector3(x1, y1, z1));
+}
+
 /** Default forward axis guess: glTF convention is +Z forward; use X if the model is clearly longer along X. */
 export function guessForwardAxis(size) {
   return size.x > size.z * 1.12 ? '+X' : '+Z';
@@ -48,7 +83,7 @@ export function axisQuaternion(forwardAxis, upAxis) {
  * Find wheel nodes. `root` must be in its "oriented" frame given by orientQ,
  * where +Z is forward, +Y up and +X lateral. Returns top-most wheel objects.
  */
-export function detectWheels(root, orientQ) {
+export function detectWheels(root, orientQ, refBox = null) {
   root.updateMatrixWorld(true);
   const invRootWorld = new THREE.Matrix4().copy(root.matrixWorld).invert();
   const orientM = new THREE.Matrix4().makeRotationFromQuaternion(orientQ);
@@ -63,7 +98,7 @@ export function detectWheels(root, orientQ) {
     });
     return b;
   };
-  const full = boxOf(root);
+  const full = refBox ? refBox.clone() : boxOf(root);
   const fullSize = full.getSize(new THREE.Vector3());
   const maxDim = Math.max(fullSize.x, fullSize.y, fullSize.z) || 1;
 

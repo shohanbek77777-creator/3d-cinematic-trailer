@@ -9,7 +9,7 @@ export default {
   description: 'Serpentine pass through pine forests under snow-capped peaks.',
   thumb: 'linear-gradient(180deg,#7fb2e5 0%,#c7dcef 40%,#7d8a8f 55%,#2f4a33 100%)',
   preset: {
-    lighting: { sunElevation: 26, sunAzimuth: 145, sunIntensity: 3.6, sunColor: '#fff1dc', ambient: 0.7, envIntensity: 1.0, exposure: 0.55, headlights: false },
+    lighting: { sunElevation: 26, sunAzimuth: 145, sunIntensity: 3.6, sunColor: '#fff1dc', ambient: 0.7, envIntensity: 1.0, exposure: 0.85, headlights: false },
     fog: { density: 0.0009, color: '#a9c0d6' },
     sky: { type: 'physical', turbidity: 3.5, rayleigh: 1.2, mie: 0.004, mieG: 0.8, clouds: 0.35 },
     hemi: { sky: '#cfe3ff', ground: '#3d4a33' },

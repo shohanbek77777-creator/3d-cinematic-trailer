@@ -30,7 +30,7 @@ export default {
   description: 'Ruined streets, burning wrecks, ash in the air and heavy haze.',
   thumb: 'linear-gradient(180deg,#5d5a55 0%,#8a8174 40%,#4a4540 60%,#1d1b19 100%)',
   preset: {
-    lighting: { sunElevation: 9, sunAzimuth: 120, sunIntensity: 1.6, sunColor: '#ffc7a0', ambient: 0.75, envIntensity: 0.8, exposure: 0.7, headlights: true },
+    lighting: { sunElevation: 9, sunAzimuth: 120, sunIntensity: 1.6, sunColor: '#ffc7a0', ambient: 0.75, envIntensity: 0.8, exposure: 0.95, headlights: true },
     fog: { density: 0.0065, color: '#7d7468' },
     sky: { type: 'physical', turbidity: 20, rayleigh: 3.2, mie: 0.02, mieG: 0.9, clouds: 0.75 },
     hemi: { sky: '#a8a094', ground: '#3a332c' },

@@ -2,6 +2,8 @@
 // of cinematic shots and timed effects, all scaled to the actual model dimensions.
 import * as THREE from 'three';
 import { uid, clamp } from './math.js';
+import { evaluateShot } from './CameraShots.js';
+import { sunDirection } from '../scene/environments/common.js';
 
 export const SECTIONS = [
   { t: 0, label: 'Intro' },
@@ -189,6 +191,34 @@ export function generateTrailer(project, engine, opts = {}) {
         c.blend = +(0.8 * f).toFixed(3);
       }
     });
+  }
+  // Cinematographer pass: for every shot pick the side that keeps the sun behind or beside
+  // the camera instead of shooting straight into it (avoids blown-out backlit frames).
+  runtime.data = actorData;
+  runtime.rebuildPath();
+  const sun = sunDirection(project.lighting.sunElevation, project.lighting.sunAzimuth);
+  const ctx = { actorState: (id, t) => engine.actorState(id, t), heroId: actorData.id, groundHeight: (x, z) => engine.groundHeight(x, z) };
+  const facing = (clip) => {
+    let worst = -1;
+    for (const k of [0.15, 0.5, 0.85]) {
+      const t = clip.start + (clip.end - clip.start) * k;
+      const r = evaluateShot(clip, t, ctx);
+      const dir = r.target.clone().sub(r.position).normalize();
+      worst = Math.max(worst, dir.dot(sun));
+    }
+    return worst;
+  };
+  for (const c of clips) {
+    if (c.shot === 'custom') continue;
+    const side = c.params.side ?? 1;
+    const flipped = { ...c, params: { ...c.params, side: -side || -1 } };
+    const a = facing(c), b = facing(flipped);
+    if (b < a - 0.05) c.params = flipped.params;
+    // still staring into a low sun: rotate orbit-style shots around the vehicle
+    if (Math.min(a, b) > 0.75 && c.params.angle !== undefined) {
+      const turned = { ...c, params: { ...c.params, angle: c.params.angle + 120 } };
+      if (facing(turned) < Math.min(a, b)) c.params = turned.params;
+    }
   }
   project.camera.clips = clips;
 

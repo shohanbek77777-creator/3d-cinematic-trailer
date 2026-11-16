@@ -9,7 +9,7 @@ export default {
   description: 'Endless sun-baked highway, dunes, mesas and golden-hour haze.',
   thumb: 'linear-gradient(180deg,#f2a65a 0%,#f6c88a 45%,#c98d55 55%,#7a4a2a 100%)',
   preset: {
-    lighting: { sunElevation: 11, sunAzimuth: 235, sunIntensity: 3.4, sunColor: '#ffcf9a', ambient: 0.55, envIntensity: 0.9, exposure: 0.62, headlights: false },
+    lighting: { sunElevation: 11, sunAzimuth: 235, sunIntensity: 3.4, sunColor: '#ffcf9a', ambient: 0.55, envIntensity: 0.9, exposure: 0.9, headlights: false },
     fog: { density: 0.0011, color: '#e0b88e' },
     sky: { type: 'physical', turbidity: 9, rayleigh: 1.6, mie: 0.007, mieG: 0.86, clouds: 0.15 },
     hemi: { sky: '#ffe2bd', ground: '#8a5a35' },

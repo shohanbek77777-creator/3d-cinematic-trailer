@@ -47,7 +47,7 @@ export default {
   description: 'Dusty forward base at dusk: hangars, barriers, floodlights and tank traps.',
   thumb: 'linear-gradient(180deg,#d9875a 0%,#a8705a 35%,#6b6248 55%,#2f2c22 100%)',
   preset: {
-    lighting: { sunElevation: 6, sunAzimuth: 255, sunIntensity: 2.8, sunColor: '#ffb27a', ambient: 0.6, envIntensity: 0.85, exposure: 0.7, headlights: true },
+    lighting: { sunElevation: 6, sunAzimuth: 255, sunIntensity: 2.8, sunColor: '#ffb27a', ambient: 0.6, envIntensity: 0.85, exposure: 0.95, headlights: true },
     fog: { density: 0.0019, color: '#b58a6a' },
     sky: { type: 'physical', turbidity: 11, rayleigh: 2.2, mie: 0.009, mieG: 0.88, clouds: 0.45 },
     hemi: { sky: '#e0b494', ground: '#4a3f2e' },

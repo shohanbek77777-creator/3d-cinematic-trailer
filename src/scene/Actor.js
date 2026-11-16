@@ -2,7 +2,7 @@
 // Hierarchy: root (path / transform) -> body (suspension) -> orient (axis fix, scale, centering) -> container -> model
 import * as THREE from 'three';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
-import { analyzeModel, guessForwardAxis, axisQuaternion, detectWheels, collectMaterials } from '../assets/ModelAnalyzer.js';
+import { analyzeModel, robustBox, guessForwardAxis, axisQuaternion, detectWheels, collectMaterials } from '../assets/ModelAnalyzer.js';
 import { ActorPath } from '../anim/Path.js';
 import { DEG, clamp } from '../anim/math.js';
 
@@ -91,10 +91,12 @@ export class ActorRuntime {
 
     // orientation
     const raw = analyzeModel(container);
-    const forwardAxis = setup.forwardAxis === 'auto' ? guessForwardAxis(raw.size) : setup.forwardAxis;
+    const rawRobust = robustBox(container);
+    const forwardAxis = setup.forwardAxis === 'auto' ? guessForwardAxis(rawRobust.getSize(new THREE.Vector3())) : setup.forwardAxis;
     const q = axisQuaternion(forwardAxis, setup.upAxis);
     const orientM = new THREE.Matrix4().makeRotationFromQuaternion(q);
-    const box = raw.box.clone().applyMatrix4(orientM);
+    // robust bounds in the oriented frame (ignores stray helper meshes / shadow planes)
+    const box = robustBox(container, orientM);
     const size = box.getSize(new THREE.Vector3());
 
     // scale: explicit target length, or fix implausible units (mm / cm / tiny exports)
@@ -106,7 +108,12 @@ export class ActorRuntime {
     const s = auto * (this.data.transform.scale || 1);
 
     // wheels (pivots inserted so each wheel spins about its own hub)
-    const wheels = setup.wheelSpin || setup.steering ? detectWheels(container, q) : [];
+    const wheels = setup.wheelSpin || setup.steering ? detectWheels(container, q, box) : [];
+    // the bottom of the tyres is the most reliable ground contact
+    if (wheels.length >= 2) {
+      const ground = Math.min(...wheels.map((w) => w.center.y - w.radius));
+      if (Number.isFinite(ground) && Math.abs(ground - box.min.y) < size.y * 0.25) box.min.y = ground;
+    }
     this.wheels = [];
     const invQ = q.clone().invert();
     for (const w of wheels) {
@@ -151,7 +158,7 @@ export class ActorRuntime {
     this.forwardAxis = forwardAxis;
     this.info = {
       ...raw,
-      size: raw.size.clone(),
+      size: size.clone(),
       forwardAxis,
       autoScale: auto,
       wheels: this.wheels.length,

@@ -236,7 +236,7 @@ export class Engine {
     this.hemi.intensity = L.ambient;
     // The Preetham sky is authored in very large radiance units; normalise its IBL contribution
     // so 'Reflections = 1' means a physically balanced amount of sky light.
-    const skyNorm = this.envDef?.preset.sky.type === 'night' ? 1 : 0.6;
+    const skyNorm = this.envDef?.preset.sky.type === 'night' ? 1 : 2.2;
     this.scene.environmentIntensity = L.envIntensity * skyNorm;
     this.renderer.shadowMap.enabled = !!L.shadows;
     this.sun.castShadow = !!L.shadows;
