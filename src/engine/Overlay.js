@@ -38,6 +38,7 @@ export class Overlay {
     this._key = key;
     const g = this.ctx;
     const W = this.canvas.width, H = this.canvas.height;
+    const U = Math.min(H, (W * 9) / 16); // type scale that also fits portrait frames
     g.clearRect(0, 0, W, H);
     const bar = letterboxAspect > 0 ? Math.max(0, (1 - W / H / letterboxAspect) * 0.5) * H : 0;
     for (const t of titles) {
@@ -53,46 +54,46 @@ export class Overlay {
         const x = W * 0.08, y = H - bar - H * 0.12;
         g.textAlign = 'left';
         g.fillStyle = '#ffffff';
-        g.font = `600 ${Math.round(H * 0.038)}px Oswald, "Bebas Neue", Impact, sans-serif`;
+        g.font = `600 ${Math.round(U * 0.038)}px Oswald, "Bebas Neue", Impact, sans-serif`;
         g.shadowColor = 'rgba(0,0,0,0.6)';
-        g.shadowBlur = H * 0.01;
+        g.shadowBlur = U * 0.01;
         const tx = x + (1 - ease.out(clamp(p * 4, 0, 1))) * -W * 0.02;
         g.fillText((c.text || '').toUpperCase(), tx, y);
         g.fillStyle = '#e8b04a';
-        g.fillRect(x, y + H * 0.032, W * 0.12 * ease.out(clamp(p * 3, 0, 1)), Math.max(2, H * 0.004));
+        g.fillRect(x, y + U * 0.032, U * 0.21 * ease.out(clamp(p * 3, 0, 1)), Math.max(2, U * 0.004));
         if (c.subtitle) {
           g.fillStyle = 'rgba(255,255,255,0.8)';
-          g.font = `400 ${Math.round(H * 0.022)}px Inter, Arial, sans-serif`;
-          g.fillText(c.subtitle.toUpperCase(), tx, y + H * 0.065);
+          g.font = `400 ${Math.round(U * 0.022)}px Inter, Arial, sans-serif`;
+          g.fillText(c.subtitle.toUpperCase(), tx, y + U * 0.065);
         }
       } else if (style === 'hero') {
         const cy = H * 0.5;
         const spacing = 0.06 + 0.12 * ease.out(p);
-        const size = Math.round(H * 0.12);
+        const size = Math.round(U * 0.12);
         g.font = `700 ${size}px Oswald, "Bebas Neue", Impact, sans-serif`;
         g.fillStyle = '#ffffff';
         g.shadowColor = 'rgba(255,190,120,0.55)';
-        g.shadowBlur = H * 0.03;
+        g.shadowBlur = U * 0.03;
         drawSpaced(g, (c.text || '').toUpperCase(), W / 2, cy, size * spacing);
         g.shadowBlur = 0;
-        const lw = W * 0.28 * ease.out(clamp(p * 2, 0, 1));
+        const lw = Math.min(W * 0.6, U * 0.5) * ease.out(clamp(p * 2, 0, 1));
         g.fillStyle = 'rgba(255,255,255,0.85)';
-        g.fillRect(W / 2 - lw / 2, cy + size * 0.62, lw, Math.max(1, H * 0.002));
+        g.fillRect(W / 2 - lw / 2, cy + size * 0.62, lw, Math.max(1, U * 0.002));
         if (c.subtitle) {
-          g.font = `500 ${Math.round(H * 0.03)}px Inter, Arial, sans-serif`;
+          g.font = `500 ${Math.round(U * 0.03)}px Inter, Arial, sans-serif`;
           g.fillStyle = 'rgba(255,255,255,0.9)';
-          drawSpaced(g, c.subtitle.toUpperCase(), W / 2, cy + size * 0.95, H * 0.012);
+          drawSpaced(g, c.subtitle.toUpperCase(), W / 2, cy + size * 0.95, U * 0.012);
         }
       } else {
         // cinematic centred card with slow push
-        const size = Math.round(H * 0.07 * (1 + 0.06 * p));
+        const size = Math.round(U * 0.07 * (1 + 0.06 * p));
         g.font = `600 ${size}px Oswald, "Bebas Neue", Impact, sans-serif`;
         g.fillStyle = '#f4efe8';
         drawSpaced(g, (c.text || '').toUpperCase(), W / 2, H * 0.5, size * (0.25 + 0.15 * p));
         if (c.subtitle) {
-          g.font = `400 ${Math.round(H * 0.024)}px Inter, Arial, sans-serif`;
+          g.font = `400 ${Math.round(U * 0.024)}px Inter, Arial, sans-serif`;
           g.fillStyle = 'rgba(244,239,232,0.75)';
-          drawSpaced(g, c.subtitle.toUpperCase(), W / 2, H * 0.5 + size * 0.9, H * 0.01);
+          drawSpaced(g, c.subtitle.toUpperCase(), W / 2, H * 0.5 + size * 0.9, U * 0.01);
         }
       }
       g.restore();

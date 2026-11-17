@@ -119,6 +119,8 @@ void main(){
   vec3 col = uDofEnabled > 0.5 ? bokeh(vUv) : fetch(vUv);
   if (uFlareEnabled > 0.5) col += flare(vUv);
   if (!all(lessThanEqual(col, vec3(64.0))) || !all(greaterThanEqual(col, vec3(0.0)))) col = vec3(0.0);
+  // cap extreme highlights (headlight glare on wet asphalt) so bloom cannot wash out the frame
+  col *= min(1.0, 7.0 / max(max(col.r, col.g), max(col.b, 1e-4)));
   gl_FragColor = vec4(col, 1.0);
 }`;
 

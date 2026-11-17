@@ -36,12 +36,12 @@ export default {
   description: 'Rain-soaked boulevard, neon signs, glowing towers and street lights.',
   thumb: 'linear-gradient(180deg,#05070f 0%,#141a3a 45%,#3a1440 60%,#0a0a12 100%)',
   preset: {
-    lighting: { sunElevation: 32, sunAzimuth: 300, sunIntensity: 0.35, sunColor: '#8fa8ff', ambient: 0.35, envIntensity: 0.9, exposure: 0.95, headlights: true },
+    lighting: { sunElevation: 32, sunAzimuth: 300, sunIntensity: 0.8, sunColor: '#9fb4ff', ambient: 0.6, envIntensity: 1.6, exposure: 0.95, headlights: true },
     fog: { density: 0.0042, color: '#141a2c' },
-    sky: { type: 'night', top: '#01030a', horizon: '#141a33', glow: '#4a2550', stars: 0.6 },
-    hemi: { sky: '#3a4a7a', ground: '#120c18' },
+    sky: { type: 'night', top: '#02050f', horizon: '#2a3566', glow: '#7a3a80', stars: 0.6 },
+    hemi: { sky: '#5a6ea8', ground: '#1c1626' },
     particles: { dust: '#3a3f4a', smoke: '#5a5f70', ambient: { color: '#9fc4ff', amount: 0.9, size: 0.04, wind: [0.4, -3.5, 0.2] } },
-    grading: { temperature: -0.12, tint: 0.05, contrast: 1.14, saturation: 1.15, shadowsColor: '#0f2a4a', highlightsColor: '#ff7ad1', splitAmount: 0.3 },
+    grading: { temperature: -0.12, tint: 0.05, contrast: 1.14, saturation: 1.15, shadowsColor: '#0f2a4a', highlightsColor: '#ff7ad1', splitAmount: 0.16 },
     envDust: 0.2,
   },
   build({ seed = 31, roadWidth = 16 }) {
@@ -61,7 +61,7 @@ export default {
     // wet reflective asphalt
     const rt = roadTexture({ markings: 'lanes', wet: true, worn: 0.4, seed });
     group.add(
-      buildRoadMesh(curve, roadWidth, new THREE.MeshStandardMaterial({ map: rt.map, roughnessMap: rt.roughnessMap, roughness: 0.35, metalness: 0.1, envMapIntensity: 1.6, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 }), { y: 0.02 })
+      buildRoadMesh(curve, roadWidth, new THREE.MeshStandardMaterial({ map: rt.map, roughnessMap: rt.roughnessMap, roughness: 0.38, metalness: 0.1, envMapIntensity: 0.4, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 }), { y: 0.02 })
     );
     const swTex = noiseSurface({ size: 128, base: [70, 70, 76], variation: 12, freq: 10, seed: seed + 3, repeat: [1, 40] });
     const swMat = new THREE.MeshStandardMaterial({ map: swTex.map, normalMap: swTex.normalMap, roughness: 0.45, metalness: 0.05 });
@@ -71,8 +71,8 @@ export default {
     }
 
     // towers with lit windows
-    const facades = [0, 1, 2, 3, 4].map((i) => facadeTexture({ seed: seed + i * 5, wall: ['#1c1e26', '#22222a', '#181a22', '#262430', '#1a1d24'][i], litChance: 0.35 + i * 0.06, broken: 0, cols: 6, rows: 12, warm: i % 2 === 0, neon: true }));
-    const mats = facades.map((f) => new THREE.MeshStandardMaterial({ map: f.map, emissiveMap: f.emissiveMap, emissive: 0xffffff, emissiveIntensity: 2.2, roughness: 0.4, metalness: 0.3 }));
+    const facades = [0, 1, 2, 3, 4].map((i) => facadeTexture({ seed: seed + i * 5, wall: ['#1c1e26', '#22222a', '#181a22', '#262430', '#1a1d24'][i], litChance: 0.3 + i * 0.05, broken: 0, cols: 8, rows: 14, warm: i % 2 === 0, neon: true }));
+    const mats = facades.map((f) => new THREE.MeshStandardMaterial({ map: f.map, emissiveMap: f.emissiveMap, emissive: 0xffffff, emissiveIntensity: 0.9, roughness: 0.4, metalness: 0.3 }));
     const batch = new Batcher();
     const signs = [];
     for (const side of [-1, 1]) {
@@ -98,7 +98,7 @@ export default {
         d += w + 3 + R() * 6;
       }
     }
-    const farMat = new THREE.MeshStandardMaterial({ map: facades[2].map, emissiveMap: facades[2].emissiveMap, emissive: 0xffffff, emissiveIntensity: 1.6, roughness: 0.6 });
+    const farMat = new THREE.MeshStandardMaterial({ map: facades[2].map, emissiveMap: facades[2].emissiveMap, emissive: 0xffffff, emissiveIntensity: 0.8, roughness: 0.6 });
     for (let i = 0; i < 90; i++) {
       const ang = R() * Math.PI * 2, dist = 250 + R() * 700;
       const x = Math.cos(ang) * dist, z = Math.sin(ang) * dist * 1.3;
@@ -111,7 +111,7 @@ export default {
     const signGeo = new THREE.PlaneGeometry(1, 0.25);
     for (const s of signs) {
       const tex = neonTexture(s.text, s.color, 1);
-      const m = new THREE.Mesh(signGeo, new THREE.MeshBasicMaterial({ map: tex, color: new THREE.Color(s.color).multiplyScalar(3.5), toneMapped: false, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+      const m = new THREE.Mesh(signGeo, new THREE.MeshBasicMaterial({ map: tex, color: new THREE.Color(s.color).multiplyScalar(1.5), toneMapped: false, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
       m.position.set(s.pos.x, s.h, s.pos.z);
       m.rotation.y = s.yaw;
       m.scale.setScalar(8 + R() * 4);
@@ -156,17 +156,18 @@ export default {
         if (!e) return (l.intensity = 0);
         l.position.copy(e[0]);
         l.target.position.set(e[0].x, 0, e[0].z);
-        l.intensity = 900;
+        l.intensity = 550;
       });
     };
 
     // parked cars with tail lights
     const cars = [], tails = [];
-    for (let i = 0; i < 30; i++) {
+    // parked cars sit on the far kerb only, clear of the hero's lane and its cameras
+    for (let i = 0; i < 16; i++) {
       const u = R();
       const p = curve.getPointAt(u);
       const tan = curve.getTangentAt(u);
-      const s = R() < 0.5 ? -1 : 1;
+      const s = 1;
       const right = new THREE.Vector3(tan.z, 0, -tan.x).normalize().multiplyScalar(s);
       const q = p.clone().addScaledVector(right, half - 1.3);
       const yaw = Math.atan2(tan.x, tan.z);

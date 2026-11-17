@@ -85,6 +85,9 @@ export class Pipeline {
     });
     this.quad = new FullScreenQuad(this.dofMat);
     this.bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.6, 0.5, 0.9);
+    // soft knee: only the excess over the threshold blooms, so a large moderately bright
+    // area (headlights on wet asphalt) no longer fogs the whole frame
+    this.bloom.highPassUniforms.smoothWidth.value = 3;
   }
 
   _makeSceneTarget(w, h) {
@@ -136,7 +139,9 @@ export class Pipeline {
     du.uAperture.value = fx.dof.aperture;
     du.uMaxBlur.value = fx.dof.maxBlur;
     du.uFlareEnabled.value = fx.lensFlare.enabled ? 1 : 0;
-    du.uFlareIntensity.value = fx.lensFlare.intensity;
+    // the flare belongs to a bright sun; fade it out under moonlight
+    const sunK = Math.min(1, (frame.lighting?.sunIntensity ?? 3) / 2.5);
+    du.uFlareIntensity.value = fx.lensFlare.intensity * sunK * sunK;
     du.uStreak.value = fx.lensFlare.streak;
     du.uGhosts.value = fx.lensFlare.ghosts;
     du.uSunColor.value.copy(frame.sunColor || new THREE.Color(1, 0.9, 0.8));
